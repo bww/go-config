@@ -50,11 +50,12 @@ type Setter interface {
 
 // varInfo maintains information about the configuration variable
 type varInfo struct {
-	Name  string
-	Alt   string
-	Key   string
-	Field reflect.Value
-	Tags  reflect.StructTag
+	Name   string
+	Alt    string
+	Key    string
+	Unwrap string
+	Field  reflect.Value
+	Tags   reflect.StructTag
 }
 
 // GatherInfo gathers information about the specified struct
@@ -93,10 +94,11 @@ func gatherInfo(prefix string, spec interface{}) ([]varInfo, error) {
 
 		// Capture information about the config variable
 		info := varInfo{
-			Name:  ftype.Name,
-			Field: f,
-			Tags:  ftype.Tag,
-			Alt:   strings.ToUpper(ftype.Tag.Get("env")),
+			Name:   ftype.Name,
+			Field:  f,
+			Tags:   ftype.Tag,
+			Alt:    strings.ToUpper(ftype.Tag.Get("env")),
+			Unwrap: strings.ToLower(ftype.Tag.Get("unwrap")),
 		}
 
 		// Default to the field name as the env var name (will be upcased)
@@ -188,10 +190,38 @@ func Process(prefix string, spec interface{}) error {
 	return DefaultProcessor.Process(prefix, spec)
 }
 
+// MustProcess is the same as Process but panics if an error occurs
+func MustProcess(prefix string, spec interface{}) {
+	if err := Process(prefix, spec); err != nil {
+		panic(err)
+	}
+}
+
+// Postproc is implmeneted by types that perform post-processing on
+// environment variables before they are assigned to a destimnation
+// field.
+type Postproc interface {
+	Unwrap(name, value string) (string, error)
+}
+
 // Processor populates the specified struct based on environment variables
 // and performs any necessary post-processing.
 type Processor struct {
 	postproc map[string]Postproc
+}
+
+// Register a secret post-processor
+func (p *Processor) RegisterSecrets(pproc Postproc) error {
+	return p.register("secret", pproc)
+}
+
+// Register a post-processor for the provided flag
+func (p *Processor) register(flag string, pproc Postproc) error {
+	if p.postproc == nil {
+		p.postproc = make(map[string]Postproc)
+	}
+	p.postproc[flag] = pproc
+	return nil
 }
 
 // Process populates the specified struct based on environment variables
@@ -199,7 +229,6 @@ func (p *Processor) Process(prefix string, spec interface{}) error {
 	infos, err := gatherInfo(prefix, spec)
 
 	for _, info := range infos {
-
 		// `os.Getenv` cannot differentiate between an explicitly set empty value
 		// and an unset value. `os.LookupEnv` is preferred to `syscall.Getenv`,
 		// but it is only available in go1.5 or newer. We're using Go build tags
@@ -226,6 +255,13 @@ func (p *Processor) Process(prefix string, spec interface{}) error {
 			continue
 		}
 
+		if pproc := p.postproc[info.Unwrap]; pproc != nil {
+			value, err = pproc.Unwrap(info.Key, value)
+			if err != nil {
+				return fmt.Errorf("could not unwrap value via %T %s=%s: %w", pproc, info.Key, value, err)
+			}
+		}
+
 		err = processField(value, info.Field)
 		if err != nil {
 			return &ParseError{
@@ -239,13 +275,6 @@ func (p *Processor) Process(prefix string, spec interface{}) error {
 	}
 
 	return err
-}
-
-// MustProcess is the same as Process but panics if an error occurs
-func MustProcess(prefix string, spec interface{}) {
-	if err := Process(prefix, spec); err != nil {
-		panic(err)
-	}
 }
 
 func processField(value string, field reflect.Value) error {
