@@ -2,12 +2,12 @@
 This package loads configuration data from the environment. It is based on the excellent [`envconfig`](https://github.com/kelseyhightower/envconfig) package, which you should probably use instead unless you specifically need the post-processing functionality offered by `go-config`.
 
 ## Unwrapping Secrets
-This package extends `envconfig` to include support for post-processing configuration data loaded from the environment before it is assigned to a field. The specific intention of this functionality is to support unwrapping secrets that are provided externally.
+This package extends `envconfig` to include support for opt-in [post-processing to unwrap configuration data](https://github.com/bww/go-config/blob/master/v1/env/envconfig.go#L200-L205) loaded from the environment before it is assigned to a field. The specific intention of this functionality is to support unwrapping secrets that are provided by some external service.
 
 Conceptually, this unwrapping functionality works as follows:
 
 ```go
-result = Unwrap(os.Getenv("env_var_name"))
+result = Unwrap("env_var_name", os.Getenv("env_var_name"))
 ```
 
 Let's say the environment contains:
