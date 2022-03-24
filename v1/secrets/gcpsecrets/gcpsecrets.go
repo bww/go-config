@@ -13,16 +13,16 @@ import (
 
 const latestVersion = "latest"
 
-type Postproc struct {
+type Provider struct {
 	client    *secretmanager.Client
 	projectId string
 }
 
-func New(client *secretmanager.Client, projectId string) *Postproc {
-	return &Postproc{client, projectId}
+func New(client *secretmanager.Client, projectId string) *Provider {
+	return &Provider{client, projectId}
 }
 
-func (p *Postproc) Unwrap(name, value string) (string, error) {
+func (p *Provider) Unwrap(name, value string) (string, error) {
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 

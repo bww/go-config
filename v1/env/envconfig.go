@@ -197,28 +197,28 @@ func MustProcess(prefix string, spec interface{}) {
 	}
 }
 
-// Postproc is implmeneted by types that perform post-processing on
+// Provider is implmeneted by types that perform post-processing on
 // environment variables before they are assigned to a destination
 // field.
-type Postproc interface {
+type Provider interface {
 	Unwrap(name, value string) (string, error)
 }
 
 // Processor populates the specified struct based on environment variables
 // and performs any necessary post-processing.
 type Processor struct {
-	postproc map[string]Postproc
+	postproc map[string]Provider
 }
 
 // Register a secret post-processor
-func (p *Processor) RegisterSecrets(pproc Postproc) error {
+func (p *Processor) RegisterSecrets(pproc Provider) error {
 	return p.register("secret", pproc)
 }
 
 // Register a post-processor for the provided flag
-func (p *Processor) register(flag string, pproc Postproc) error {
+func (p *Processor) register(flag string, pproc Provider) error {
 	if p.postproc == nil {
-		p.postproc = make(map[string]Postproc)
+		p.postproc = make(map[string]Provider)
 	}
 	p.postproc[flag] = pproc
 	return nil
