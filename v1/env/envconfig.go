@@ -198,7 +198,7 @@ func MustProcess(prefix string, spec interface{}) {
 }
 
 // Postproc is implmeneted by types that perform post-processing on
-// environment variables before they are assigned to a destimnation
+// environment variables before they are assigned to a destination
 // field.
 type Postproc interface {
 	Unwrap(name, value string) (string, error)
