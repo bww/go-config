@@ -4,6 +4,12 @@ This package loads configuration data from the environment. It is based on the e
 ## Unwrapping Secrets
 This package extends `envconfig` to include support for post-processing configuration data loaded from the environment before it is assigned to a field. The specific intention of this functionality is to support unwrapping secrets that are provided externally.
 
+Conceptually, this unwrapping functionality works as follows:
+
+```go
+result = Unwrap(os.Getenv("env_var_name"))
+```
+
 Let's say the environment contains:
 
 ```sh
@@ -11,7 +17,7 @@ EXAMPLE_URL=https://github.com/bww/go-config
 EXAMPLE_PASSWORD=password_name
 ```
 
-We might load this confirmation using the following illustrative snippet:
+We might load this configuration using something like the following:
 
 ```go
 import (
