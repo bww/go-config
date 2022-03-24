@@ -1,3 +1,4 @@
+// Package gcpsecrets implements unwrapping of secrets via GCP Secret Manager.
 package gcpsecrets
 
 import (
