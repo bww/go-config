@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT License that can be found in
 // the LICENSE file.
 
-package envconfig
+package env
 
 import (
 	"encoding"
@@ -144,7 +144,7 @@ func Usagef(prefix string, spec interface{}, out io.Writer, format string) error
 		},
 	}
 
-	tmpl, err := template.New("envconfig").Funcs(functions).Parse(format)
+	tmpl, err := template.New("env").Funcs(functions).Parse(format)
 	if err != nil {
 		return err
 	}

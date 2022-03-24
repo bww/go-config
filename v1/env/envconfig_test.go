@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT License that can be found in
 // the LICENSE file.
 
-package envconfig
+package env
 
 import (
 	"flag"
@@ -52,20 +52,20 @@ type Specification struct {
 	MultiWordACRWithAutoSplit    uint32 `split_words:"true"`
 	SomePointer                  *string
 	SomePointerWithDefault       *string `default:"foo2baz" desc:"foorbar is the word"`
-	MultiWordVarWithAlt          string  `envconfig:"MULTI_WORD_VAR_WITH_ALT" desc:"what alt"`
-	MultiWordVarWithLowerCaseAlt string  `envconfig:"multi_word_var_with_lower_case_alt"`
-	NoPrefixWithAlt              string  `envconfig:"SERVICE_HOST"`
+	MultiWordVarWithAlt          string  `env:"MULTI_WORD_VAR_WITH_ALT" desc:"what alt"`
+	MultiWordVarWithLowerCaseAlt string  `env:"multi_word_var_with_lower_case_alt"`
+	NoPrefixWithAlt              string  `env:"SERVICE_HOST"`
 	DefaultVar                   string  `default:"foobar"`
 	RequiredVar                  string  `required:"True"`
-	NoPrefixDefault              string  `envconfig:"BROKER" default:"127.0.0.1"`
+	NoPrefixDefault              string  `env:"BROKER" default:"127.0.0.1"`
 	RequiredDefault              string  `required:"true" default:"foo2bar"`
 	Ignored                      string  `ignored:"true"`
 	NestedSpecification          struct {
-		Property            string `envconfig:"inner"`
+		Property            string `env:"inner"`
 		PropertyWithDefault string `default:"fuzzybydefault"`
-	} `envconfig:"outer"`
+	} `env:"outer"`
 	AfterNested  string
-	DecodeStruct HonorDecodeInStruct `envconfig:"honor"`
+	DecodeStruct HonorDecodeInStruct `env:"honor"`
 	Datetime     time.Time
 	MapField     map[string]string `default:"one:two,three:four"`
 	UrlValue     CustomURL
@@ -76,8 +76,8 @@ type Embedded struct {
 	Enabled             bool `desc:"some embedded value"`
 	EmbeddedPort        int
 	MultiWordVar        string
-	MultiWordVarWithAlt string `envconfig:"MULTI_WITH_DIFFERENT_ALT"`
-	EmbeddedAlt         string `envconfig:"EMBEDDED_WITH_ALT"`
+	MultiWordVarWithAlt string `env:"MULTI_WITH_DIFFERENT_ALT"`
+	EmbeddedAlt         string `env:"EMBEDDED_WITH_ALT"`
 	EmbeddedIgnored     string `ignored:"true"`
 }
 
@@ -109,8 +109,8 @@ func TestProcess(t *testing.T) {
 	os.Setenv("ENV_CONFIG_DATETIME", "2016-08-16T18:57:05Z")
 	os.Setenv("ENV_CONFIG_MULTI_WORD_VAR_WITH_AUTO_SPLIT", "24")
 	os.Setenv("ENV_CONFIG_MULTI_WORD_ACR_WITH_AUTO_SPLIT", "25")
-	os.Setenv("ENV_CONFIG_URLVALUE", "https://github.com/kelseyhightower/envconfig")
-	os.Setenv("ENV_CONFIG_URLPOINTER", "https://github.com/kelseyhightower/envconfig")
+	os.Setenv("ENV_CONFIG_URLVALUE", "https://github.com/kelseyhightower/env")
+	os.Setenv("ENV_CONFIG_URLPOINTER", "https://github.com/kelseyhightower/env")
 	err := Process("env_config", &s)
 	if err != nil {
 		t.Error(err.Error())
@@ -205,7 +205,7 @@ func TestProcess(t *testing.T) {
 		t.Errorf("expected %d, got %d", 25, s.MultiWordACRWithAutoSplit)
 	}
 
-	u, err := url.Parse("https://github.com/kelseyhightower/envconfig")
+	u, err := url.Parse("https://github.com/kelseyhightower/env")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -794,7 +794,7 @@ func TestCheckDisallowedIgnored(t *testing.T) {
 
 func TestErrorMessageForRequiredAltVar(t *testing.T) {
 	var s struct {
-		Foo    string `envconfig:"BAR" required:"true"`
+		Foo string `env:"BAR" required:"true"`
 	}
 
 	os.Clearenv()

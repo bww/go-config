@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT License that can be found in
 // the LICENSE file.
 
-package envconfig
+package env
 
 import (
 	"encoding"
@@ -32,6 +32,10 @@ type ParseError struct {
 	Err       error
 }
 
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("env.Process: assigning %[1]s to %[2]s: converting '%[3]s' to type %[4]s. details: %[5]s", e.KeyName, e.FieldName, e.Value, e.TypeName, e.Err)
+}
+
 // Decoder has the same semantics as Setter, but takes higher precedence.
 // It is provided for historical compatibility.
 type Decoder interface {
@@ -42,10 +46,6 @@ type Decoder interface {
 // Any type that implements flag.Value also implements Setter.
 type Setter interface {
 	Set(value string) error
-}
-
-func (e *ParseError) Error() string {
-	return fmt.Sprintf("envconfig.Process: assigning %[1]s to %[2]s: converting '%[3]s' to type %[4]s. details: %[5]s", e.KeyName, e.FieldName, e.Value, e.TypeName, e.Err)
 }
 
 // varInfo maintains information about the configuration variable
@@ -96,7 +96,7 @@ func gatherInfo(prefix string, spec interface{}) ([]varInfo, error) {
 			Name:  ftype.Name,
 			Field: f,
 			Tags:  ftype.Tag,
-			Alt:   strings.ToUpper(ftype.Tag.Get("envconfig")),
+			Alt:   strings.ToUpper(ftype.Tag.Get("env")),
 		}
 
 		// Default to the field name as the env var name (will be upcased)
@@ -180,8 +180,22 @@ func CheckDisallowed(prefix string, spec interface{}) error {
 	return nil
 }
 
-// Process populates the specified struct based on environment variables
+// The default processor
+var DefaultProcessor = &Processor{}
+
+// Process is a convenience interface which uses the default Processor
 func Process(prefix string, spec interface{}) error {
+	return DefaultProcessor.Process(prefix, spec)
+}
+
+// Processor populates the specified struct based on environment variables
+// and performs any necessary post-processing.
+type Processor struct {
+	postproc map[string]Postproc
+}
+
+// Process populates the specified struct based on environment variables
+func (p *Processor) Process(prefix string, spec interface{}) error {
 	infos, err := gatherInfo(prefix, spec)
 
 	for _, info := range infos {
